@@ -1,116 +1,35 @@
-apply from: "common.gradle"
-apply plugin: "io.freefair.lombok"
-apply plugin: "jacoco"
-jacoco {
-    toolVersion = "0.8.8"
-    reportsDir = file('build/reports/jacoco')
-}
-subprojects {
-    apply plugin: 'java'
-    apply plugin: 'jacoco'
-    dependencies {
-        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-    }
-    test {
-        useJUnitPlatform()
-    }
-/*
-    gradle.projectsEvaluated {
-        tasks.withType(JacocoCoverageVerification) {
-            violationRules {
-                rule {
-                    limit {
-                        minimum = 0.5
-                    }
-                }
-            }
-        }
-    }
-*/
-}
-buildscript {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-    }
-    dependencies {
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.2.1.RELEASE")
-        classpath "io.freefair.gradle:lombok-plugin:4.1.4"
-        classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.14'
-        // NOTE: Do not place your application dependencies here; they belong
-        // in the individual module build.gradle files
-    }
+group 'org.example'
+version '1.0-SNAPSHOT'
+apply from: "${project.rootDir}/quality/checkstyle.gradle"
+
+repositories {
+    mavenCentral()
 }
 
-allprojects {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        google()
-    }
-    gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
-            options.compilerArgs += [
-                    "-Xlint:unchecked",
-                    "-Xlint:deprecation",
-                    "-Xlint:fallthrough",
-                    "-Xlint:static",
-                    "-Xlint:try",
-                    "-Xlint:varargs",
-                    "-Xlint:finally",
-                    "-Werror"
-            ]
-        }
-    }
-}
+classes.finalizedBy checkstyleMain
 
-task jacocoRootReport(type: JacocoReport, group: 'Coverage reports') {
-    description = 'Generates an aggregate report from all subprojects'
-    dependsOn(subprojects.test)
+sourceCompatibility = 11
+targetCompatibility = 11
 
-    def projects = ['center', 'common', 'agent', 'sdk', 'gradle_plugin', 'runner']
-    def jacocoProjects = subprojects.findAll { projects.contains(it.getName()) }
+dependencies {
+    compile project(":sdk")
+    compile project(":common")
+    implementation "com.google.guava:guava:30.1.1-jre"
+    // implementation 'com.squareup.okhttp3:okhttp:4.9.1'
+    implementation 'org.jetbrains:annotations:21.0.1'
+    implementation 'com.alibaba:fastjson:1.2.76'
 
-    additionalSourceDirs.from = files(jacocoProjects.sourceSets.main.allSource.srcDirs)
-    sourceDirectories.from = files(jacocoProjects.sourceSets.main.allSource.srcDirs)
-    classDirectories.from = files(jacocoProjects.sourceSets.main.output)
-    executionData.from = files(jacocoProjects.jacocoTestReport.executionData)
+    // implementation 'com.sikulix:sikulixapi:2.0.5'
+    implementation 'io.appium:java-client:8.0.0'
+    implementation 'org.seleniumhq.selenium:selenium-support:4.0.0'
+    implementation 'org.seleniumhq.selenium:selenium-edge-driver:4.1.4'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.0'
 
-    reports {
-        html.enabled true
-        xml.enabled true
-    }
-}
-
-task packageMacInstaller(type: Zip, dependsOn: ':agent:bootJar') {
-    from 'agent/agent_installer/MacOS/iOS'
-    from 'agent/build/libs'
-    archiveName 'HydraLab_Agent_Installer_Mac.zip'
-    destinationDir file('build/installer')
-}
-
-task packageWindowsInstaller(type: Zip, dependsOn: ':agent:bootJar') {
-    from 'agent/agent_installer/Windows'
-    from 'agent/build/libs'
-    archiveName 'HydraLab_Agent_Installer_Windows.zip'
-    destinationDir file('build/installer')
-}
-import com.microsoft.hydralab.compile.UMLImageGenerator
-
-task generateUMLImage(group: 'documentation') {
-    doFirst {
-        def scanningDirList = ['agent/doc/UML', 'common/doc/UML', 'gradle_plugin/doc/UML', 'docs/UML']
-        def outputDir = new File(projectDir, 'docs/images/UML')
-
-        def generator = new UMLImageGenerator()
-        scanningDirList.each {
-            fileTree(new File(projectDir, it)).filter { it.name.endsWith(".puml") }.files.each {
-                generator.generateUMLImageFromFile(it.absoluteFile, outputDir)
-            }
-        }
-    }
+    testImplementation 'io.appium:java-client:8.0.0'
+    // testImplementation group: 'com.opencsv', name: 'opencsv', version: '5.4'
+    testImplementation group: 'net.lingala.zip4j', name: 'zip4j', version: '2.9.0'
+    testImplementation group: 'commons-io', name: 'commons-io', version: '2.11.0'
+    // testImplementation group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '9.4.0.jre16'
+    testImplementation 'org.seleniumhq.selenium:selenium-support:4.0.0'
+    compile 'ch.qos.logback:logback-classic:1.2.3'
 }
